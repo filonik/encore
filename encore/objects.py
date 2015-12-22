@@ -8,7 +8,7 @@ from . import functions, generics, managers
 
 @cl.contextmanager
 def direct_access(obj):
-    direct_getattr = managers.attrset(type(obj), "__getattr__", lambda self, key: functions.raiser(AttributeError(key))())
+    direct_getattr = managers.attrset(type(obj), "__getattr__", functions.raiser(lambda self, key: AttributeError(key)))
     direct_setattr = managers.attrset(type(obj), "__setattr__", object.__setattr__)
     direct_delattr = managers.attrset(type(obj), "__delattr__", object.__delattr__)
     with direct_getattr, direct_setattr, direct_delattr:

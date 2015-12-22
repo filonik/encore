@@ -1,24 +1,18 @@
 
 def constant(value):
-    def _constant():
+    def _constant(*args, **kwargs):
         return value
     return _constant
 
-    
-def caller(function, *args, **kwargs):
-    def _caller():
-        return function(*args, **kwargs)
-    return _caller
-
 
 def raiser(value):
-    def _raiser():
-        raise value
+    def _raiser(*args, **kwargs):
+        raise value(*args, **kwargs)
     return _raiser
 
 
 def counter(initial=0, step=1):
-    def _counter():
+    def _counter(*args, **kwargs):
         result = _counter._i
         _counter._i += step
         return result
@@ -29,6 +23,19 @@ def counter(initial=0, step=1):
 # TODO: Monad
 unit = constant
 
-def bind(function, value):
-    return function(value())
 
+def binder(function):
+    def decorator(*args_, **kwargs_):
+        def decorated(*args, **kwargs):
+            _args = [value(*args, **kwargs) for value in args_]
+            _kwargs = {key: value(*args, **kwargs) for key, value in kwargs_.items()}
+            return function(*_args, **_kwargs)
+        return decorated
+    return decorator
+
+
+def lifter(function):
+    return binder(lambda *args, **kwargs: unit(function(*args, **kwargs)))
+
+
+printer = lifter(print)
