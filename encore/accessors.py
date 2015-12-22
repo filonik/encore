@@ -94,8 +94,8 @@ def lazy_setdefaultitem(obj, key, default):
 
 
 def setdefaultattr(obj, key, default):
-    return lazy_setdefaultattr(obj, key, constant(default))
+    return lazy_setdefaultattr(obj, key, utilities.constant(default))
 
 
 def setdefaultitem(obj, key, default):
-    return lazy_setdefaultitem(obj, key, constant(default))
+    return lazy_setdefaultitem(obj, key, utilities.constant(default))
