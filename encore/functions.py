@@ -4,16 +4,16 @@ def constant(value):
         return value
     return _constant
 
-
-def binder(function, *args, **kwargs):
-    def _binder():
+    
+def caller(function, *args, **kwargs):
+    def _caller():
         return function(*args, **kwargs)
-    return _bound
+    return _caller
 
 
-def raiser(cls):
+def raiser(value):
     def _raiser():
-        raise cls()
+        raise value
     return _raiser
 
 
@@ -24,3 +24,11 @@ def counter(initial=0, step=1):
         return result
     _counter._i = initial
     return _counter
+
+
+# TODO: Monad
+unit = constant
+
+def bind(function, value):
+    return function(value())
+

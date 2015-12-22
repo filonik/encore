@@ -1,7 +1,8 @@
 import collections
 import copy
 
-from .utilities import identity, constant, getitem, setitem, delitem
+from .accessors import getitem, setitem, delitem
+from .utilities import identity, constant
 
 
 class DefineMap(dict):
