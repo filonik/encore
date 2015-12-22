@@ -1,6 +1,6 @@
 import functools as ft
 
-from . import coercions, indexers
+from . import accessors, coercions, indexers
 
 
 def attrcached(attr):
@@ -110,9 +110,15 @@ def flyweight(cls):
 
     @classmethod
     def _new_cls_new(cls, *args, **kargs):
-        return cls.__instances.setdefault((args, tuple(kargs.items())), _old_cls_new(*args, **kargs))
-
-    cls.__instances = dict()
+        def _new_cls_new_():
+            if _old_cls_new is object.__new__:
+                result = _old_cls_new(cls)
+            else:
+                result = _old_cls_new(cls, *args, **kargs)
+            return result
+        return accessors.lazy_setdefaultitem(cls._instances, (args, tuple(kargs.items())), _new_cls_new_)
+    
+    cls._instances = dict()
     cls.__new__ = _new_cls_new
     return cls
 
