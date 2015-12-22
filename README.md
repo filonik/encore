@@ -20,7 +20,7 @@ a = Foo("A")
 print(a, id(a), id(Foo("A")), a is Foo("A"))
 ```
 
-The `indexedproperty` decorator allows to define properties that behave like mutable mappings.
+The `indexedproperty` decorator allows defining properties that behave like mappings.
 
 ```python
 from encore import decorators
