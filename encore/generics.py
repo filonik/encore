@@ -6,13 +6,13 @@ from . import accessors, coercions, decorators, utilities
 Self = utilities.unique_instance("Self")
 
 
-def _unself(cls, obj):
-    return cls if obj is Self else obj
+def _unself(obj, value):
+    return value if obj is Self else obj
 
 
 def mangle(cls, parameters):
     def _str(obj):
-        obj = _unself(cls, obj)
+        obj = _unself(obj, cls)
         return getattr(obj, '__name__', repr(obj))
     return "_".join(map(_str, (cls,) + parameters))
 
@@ -59,6 +59,5 @@ def latebind(func):
 def parameter(key, default=None):
     @decorators.universalproperty
     def _parameter(cls, obj):
-        obj = _unself(cls, default)
-        return accessors.getitem(cls._parameters, key, obj)
+        return _unself(accessors.getitem(cls._parameters, key, default), cls)
     return _parameter

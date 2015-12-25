@@ -1,7 +1,7 @@
 import functools as ft
 import itertools as it
 
-from .functions import constant, caller, raiser
+from .functions import constant, counter, raiser
 
 
 def identity(obj):

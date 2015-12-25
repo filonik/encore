@@ -114,7 +114,7 @@ def flyweight(cls):
             if _old_cls_new is object.__new__:
                 result = _old_cls_new(cls)
             else:
-                result = _old_cls_new(cls, *args, **kargs)
+                result = _old_cls_new(*args, **kargs)
             return result
         return accessors.lazy_setdefaultitem(cls._instances, (args, tuple(kargs.items())), _new_cls_new_)
     

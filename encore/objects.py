@@ -38,10 +38,11 @@ def _delattr(self, key):
 
 class Object(object):
     """ Quick and dirty serializable objects. """
-    def __init__(self, data=None):
+    def __init__(self, data=None, parent=None):
         super().__init__()
         
         with direct_access(self):
+            self._parent = parent
             self._data = {} if data is None else data
     
     __getattr__ = _getattr
@@ -64,10 +65,11 @@ class Sequence(collections.MutableSequence):
     def _items(self):
         return self._data[self._items_key]
     
-    def __init__(self, data=None):
+    def __init__(self, data=None, parent=None):
         super().__init__()
         
         with direct_access(self):
+            self._parent = parent
             self._data = {} if data is None else data
             self._data.setdefault(self._items_key, [])
         
@@ -82,7 +84,7 @@ class Sequence(collections.MutableSequence):
         self._data = data
     
     def _wrap_item(self, data):
-        return self._items_cls(data)
+        return self._items_cls(data, parent=self)
     
     def _unwrap_item(self, item):
         return item._data
@@ -115,10 +117,11 @@ class Mapping(collections.MutableMapping):
     def _items(self):
         return self._data[self._items_key]
     
-    def __init__(self, data=None):
+    def __init__(self, data=None, parent=None):
         super().__init__()
         
         with direct_access(self):
+            self._parent = parent
             self._data = {} if data is None else data
             self._data.setdefault(self._items_key, {})
     
@@ -133,7 +136,7 @@ class Mapping(collections.MutableMapping):
         self._data = data
     
     def _wrap_item(self, data):
-        return self._items_cls(data)
+        return self._items_cls(data, parent=self)
     
     def _unwrap_item(self, item):
         return item._data

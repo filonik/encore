@@ -1,3 +1,5 @@
+import operator
+
 
 def constant(value):
     def _constant(*args, **kwargs):
@@ -5,10 +7,10 @@ def constant(value):
     return _constant
 
 
-def raiser(value):
-    def _raiser(*args, **kwargs):
-        raise value(*args, **kwargs)
-    return _raiser
+def variable(key, default=None):
+    def _variable(*args, **kwargs):
+        return kwargs.get(key, default)
+    return _variable
 
 
 def counter(initial=0, step=1):
@@ -20,8 +22,10 @@ def counter(initial=0, step=1):
     return _counter
 
 
-# TODO: Monad
-unit = constant
+def raiser(value):
+    def _raiser(*args, **kwargs):
+        raise value(*args, **kwargs)
+    return _raiser
 
 
 def binder(function):
@@ -34,8 +38,12 @@ def binder(function):
     return decorator
 
 
-def lifter(function):
-    return binder(lambda *args, **kwargs: unit(function(*args, **kwargs)))
+# TODO: Monads
+unit = constant
 
+printer = binder(print)
 
-printer = lifter(print)
+add = binder(operator.add)
+sub = binder(operator.sub)
+mul = binder(operator.mul)
+div = binder(operator.truediv)
