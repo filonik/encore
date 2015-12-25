@@ -54,7 +54,9 @@ class Object(object):
         
     def load(self, data):
         self._data = data
-
+    
+    def __str__(self):
+        return str(self._data)
 
 @generics.generic
 class Sequence(collections.MutableSequence):
@@ -107,6 +109,9 @@ class Sequence(collections.MutableSequence):
     def insert(self, key, value):
         self._items.insert(key, self._unwrap_item(value))
 
+    def __str__(self):
+        return str(self._data)
+
 
 @generics.generic
 class Mapping(collections.MutableMapping):
@@ -158,6 +163,9 @@ class Mapping(collections.MutableMapping):
         
     def __iter__(self):
         return iter(self._items)
+
+    def __str__(self):
+        return str(self._data)
 
 
 def load_json(obj, path):
