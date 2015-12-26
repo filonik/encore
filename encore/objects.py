@@ -15,35 +15,116 @@ def direct_access(obj):
         yield
 
 
-def _getattr(self, key):
+def wrap_attr(self, value):
+    if self._attrs_cls is None:
+        return value
+    else:
+        return self._attrs_cls(value, parent=self._parent)
+
+
+def unwrap_attr(self, value):
     try:
-        return self._data[key]
-    except KeyError:
+        return value._data
+    except AttributeError:
+        return value
+
+
+def wrap_item(self, value):
+    if self._items_cls is None:
+        return value
+    else:
+        return self._items_cls(value, parent=self._parent)
+
+
+def unwrap_item(self, value):
+    try:
+        return value._data
+    except AttributeError:
+        return value
+
+
+def _getattr(self, key):
+    if self._attrs is None:
         raise AttributeError(key)
+    else:
+        try:
+            return self._wrap_attr(self._attrs[key])
+        except KeyError:
+            raise AttributeError(key)
 
 
 def _setattr(self, key, value):
-    if key in self.__dict__:
+    if self._attrs is None:
         self.__dict__[key] = value
     else:
-        self._data[key] = value
+        if key in self.__dict__:
+            self.__dict__[key] = value
+        else:
+            self._attrs[key] = self._unwrap_attr(value)
 
 
 def _delattr(self, key):
-    if key in self.__dict__:
+    if self._attrs is None:
         del self.__dict__[key]
     else:
-        del self._data[key]
+        if key in self.__dict__:
+            del self.__dict__[key]
+        else:
+            del self._attrs[key]
 
 
+def _getitem(self, key):
+    return self._wrap_item(self._items[key])
+
+
+def _setitem(self, key, value):
+    self._items[key] = self._unwrap_item(value)
+
+
+def _delitem(self, key):
+    del self._items[key]
+
+
+def attrsof(obj):
+    try:
+        return obj._attrs
+    except AttributeError:
+        return None
+
+
+def itemsof(obj):
+    try:
+        return obj._items
+    except AttributeError:
+        return None
+
+
+@generics.generic
 class Object(object):
-    """ Quick and dirty serializable objects. """
+    _attrs_cls = generics.parameter(0)
+    
+    _type_key = "type"
+    _attrs_key = "attrs"
+   
+    @property
+    def _type(self):
+        return self._data[self._type_key]
+    
+    @property
+    def _attrs(self):
+        return self._data[self._attrs_key]
+    
     def __init__(self, data=None, parent=None):
         super().__init__()
         
         with direct_access(self):
             self._parent = parent
             self._data = {} if data is None else data
+            self._data.setdefault(self._type_key, None)
+            self._data.setdefault(self._attrs_key, {})
+    
+    _wrap_attr = wrap_attr
+    _unwrap_attr = unwrap_attr
     
     __getattr__ = _getattr
     __setattr__ = _setattr
@@ -56,12 +137,25 @@ class Object(object):
         self._data = data
     
     def __str__(self):
-        return str(self._data)
+        return "".join(map(str, filter(None, [self._type, self._attrs])))
+
 
 @generics.generic
 class Sequence(collections.MutableSequence):
-    _items_cls = generics.parameter(0, generics.Self)
+    _attrs_cls = generics.parameter(1)
+    _items_cls = generics.parameter(0)
+
+    _type_key = "type"
+    _attrs_key = "attrs"
     _items_key = "items"
+   
+    @property
+    def _type(self):
+        return self._data[self._type_key]
+    
+    @property
+    def _attrs(self):
+        return self._data[self._attrs_key]
     
     @property
     def _items(self):
@@ -73,50 +167,59 @@ class Sequence(collections.MutableSequence):
         with direct_access(self):
             self._parent = parent
             self._data = {} if data is None else data
+            self._data.setdefault(self._type_key, None)
+            self._data.setdefault(self._attrs_key, {})
             self._data.setdefault(self._items_key, [])
-        
+    
+    _wrap_attr = wrap_attr
+    _unwrap_attr = unwrap_attr
+    
     __getattr__ = _getattr
     __setattr__ = _setattr
     __delattr__ = _delattr
     
-    def save(self):
-        return self._data
-        
-    def load(self, data):
-        self._data = data
+    _wrap_item = wrap_item
+    _unwrap_item = unwrap_item
     
-    def _wrap_item(self, data):
-        return self._items_cls(data, parent=self)
-    
-    def _unwrap_item(self, item):
-        return item._data
+    __getitem__ = _getitem
+    __setitem__ = _setitem
+    __delitem__ = _delitem
     
     def __contains__(self, key):
         return key in self._items
-    
-    def __getitem__(self, key):
-        return self._wrap_item(self._items[key])
-    
-    def __setitem__(self, key, value):
-        self._items[key] = self._unwrap_item(value)
-    
-    def __delitem__(self, key):
-        del self._items[key]
     
     def __len__(self):
         return len(self._items)
     
     def insert(self, key, value):
         self._items.insert(key, self._unwrap_item(value))
-
+    
+    def save(self):
+        return self._data
+        
+    def load(self, data):
+        self._data = data
+    
     def __str__(self):
-        return str(self._data)
+        return "".join(map(str, filter(None, [self._type, self._attrs, self._items])))
 
 
 @generics.generic
 class Mapping(collections.MutableMapping):
-    _items_cls = generics.parameter(0, generics.Self)
+    _attrs_cls = generics.parameter(1)
+    _items_cls = generics.parameter(0)
+    
+    _type_key = "type"
+    _attrs_key = "attrs"
     _items_key = "items"
+   
+    @property
+    def _type(self):
+        return self._data[self._type_key]
+    
+    @property
+    def _attrs(self):
+        return self._data[self._attrs_key]
     
     @property
     def _items(self):
@@ -128,11 +231,32 @@ class Mapping(collections.MutableMapping):
         with direct_access(self):
             self._parent = parent
             self._data = {} if data is None else data
+            self._data.setdefault(self._type_key, None)
+            self._data.setdefault(self._attrs_key, {})
             self._data.setdefault(self._items_key, {})
+    
+    _wrap_attr = wrap_attr
+    _unwrap_attr = unwrap_attr
     
     __getattr__ = _getattr
     __setattr__ = _setattr
     __delattr__ = _delattr
+    
+    _wrap_item = wrap_item
+    _unwrap_item = unwrap_item
+    
+    __getitem__ = _getitem
+    __setitem__ = _setitem
+    __delitem__ = _delitem
+    
+    def __contains__(self, key):
+        return key in self._items
+    
+    def __len__(self):
+        return len(self._items)
+        
+    def __iter__(self):
+        return iter(self._items)
     
     def save(self):
         return self._data
@@ -140,32 +264,8 @@ class Mapping(collections.MutableMapping):
     def load(self, data):
         self._data = data
     
-    def _wrap_item(self, data):
-        return self._items_cls(data, parent=self)
-    
-    def _unwrap_item(self, item):
-        return item._data
-    
-    def __contains__(self, key):
-        return key in self._items
-    
-    def __getitem__(self, key):
-        return self._wrap_item(self._items[key])
-    
-    def __setitem__(self, key, value):
-        self._items[key] = self._unwrap_item(value)
-    
-    def __delitem__(self, key):
-        del self._items[key]
-    
-    def __len__(self):
-        return len(self._items)
-        
-    def __iter__(self):
-        return iter(self._items)
-
     def __str__(self):
-        return str(self._data)
+        return "".join(map(str, filter(None, [self._type, self._attrs, self._items])))
 
 
 def load_json(obj, path):
