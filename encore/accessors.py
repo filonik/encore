@@ -1,4 +1,5 @@
 from builtins import hasattr, getattr, setattr, delattr
+from operator import attrgetter, itemgetter
 
 from . import utilities
 
@@ -55,6 +56,22 @@ def lenitems(obj):
         return len(obj)
     except TypeError:
         return 0
+
+
+def attrsetter(key, obj=utilities.Unspecified):
+    def f0(value):
+        setattr(obj, key, value)
+    def f1(obj, value):
+        setattr(obj, key, value)
+    return f0 if utilities.specified(obj) else f1
+
+
+def itemsetter(key, obj=utilities.Unspecified):
+    def f0(value):
+        setitem(obj, key, value)
+    def f1(obj, value):
+        setitem(obj, key, value)
+    return f0 if utilities.specified(obj) else f1
 
 
 def swapattr(obj, name, value):

@@ -1,3 +1,5 @@
+import sys
+
 import functools as ft
 
 from . import accessors, coercions, decorators, utilities
@@ -10,11 +12,16 @@ def _unself(obj, value):
     return value if obj is Self else obj
 
 
+'''
 def mangle(cls, parameters):
     def _str(obj):
         obj = _unself(obj, cls)
         return getattr(obj, '__name__', repr(obj))
     return "_".join(map(_str, (cls,) + parameters))
+'''
+def mangle(cls, parameters):
+    uid = hex(hash(parameters) + sys.maxsize + 1)
+    return "_".join([cls.__name__, uid])
 
 
 class GenericClassFactory(object):

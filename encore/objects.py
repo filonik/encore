@@ -16,10 +16,10 @@ def direct_access(obj):
 
 
 def wrap_attr(self, value):
-    if self._attrs_cls is None:
+    if self._attr_cls is None:
         return value
     else:
-        return self._attrs_cls(value, parent=self._parent)
+        return self._attr_cls(value, parent=self)
 
 
 def unwrap_attr(self, value):
@@ -30,10 +30,10 @@ def unwrap_attr(self, value):
 
 
 def wrap_item(self, value):
-    if self._items_cls is None:
+    if self._item_cls is None:
         return value
     else:
-        return self._items_cls(value, parent=self._parent)
+        return self._item_cls(value, parent=self)
 
 
 def unwrap_item(self, value):
@@ -85,23 +85,24 @@ def _delitem(self, key):
     del self._items[key]
 
 
-def attrsof(obj):
+def getattrs(obj, default=None):
     try:
         return obj._attrs
     except AttributeError:
-        return None
+        return default
 
 
-def itemsof(obj):
+def getitems(obj, default=None):
     try:
         return obj._items
     except AttributeError:
-        return None
+        return default
 
 
 @generics.generic
 class Object(object):
-    _attrs_cls = generics.parameter(0)
+    _attr_cls = generics.parameter(0)
+    _attrs_cls = generics.parameter(1, dict)
     
     _type_key = "type"
     _attrs_key = "attrs"
@@ -120,8 +121,7 @@ class Object(object):
         with direct_access(self):
             self._parent = parent
             self._data = {} if data is None else data
-            self._data.setdefault(self._type_key, None)
-            self._data.setdefault(self._attrs_key, {})
+            self._data.setdefault(self._attrs_key, self._attrs_cls())
     
     _wrap_attr = wrap_attr
     _unwrap_attr = unwrap_attr
@@ -142,8 +142,11 @@ class Object(object):
 
 @generics.generic
 class Sequence(collections.MutableSequence):
-    _attrs_cls = generics.parameter(1)
-    _items_cls = generics.parameter(0)
+    _item_cls = generics.parameter(0)
+    _items_cls = generics.parameter(1, list)
+    
+    _attr_cls = generics.parameter(2)
+    _attrs_cls = generics.parameter(3, dict)
 
     _type_key = "type"
     _attrs_key = "attrs"
@@ -167,9 +170,8 @@ class Sequence(collections.MutableSequence):
         with direct_access(self):
             self._parent = parent
             self._data = {} if data is None else data
-            self._data.setdefault(self._type_key, None)
-            self._data.setdefault(self._attrs_key, {})
-            self._data.setdefault(self._items_key, [])
+            self._data.setdefault(self._attrs_key, self._attrs_cls())
+            self._data.setdefault(self._items_key, self._items_cls())
     
     _wrap_attr = wrap_attr
     _unwrap_attr = unwrap_attr
@@ -206,8 +208,11 @@ class Sequence(collections.MutableSequence):
 
 @generics.generic
 class Mapping(collections.MutableMapping):
-    _attrs_cls = generics.parameter(1)
-    _items_cls = generics.parameter(0)
+    _item_cls = generics.parameter(0)
+    _items_cls = generics.parameter(1, dict)
+    
+    _attr_cls = generics.parameter(2)
+    _attrs_cls = generics.parameter(3, dict)
     
     _type_key = "type"
     _attrs_key = "attrs"
@@ -231,9 +236,8 @@ class Mapping(collections.MutableMapping):
         with direct_access(self):
             self._parent = parent
             self._data = {} if data is None else data
-            self._data.setdefault(self._type_key, None)
-            self._data.setdefault(self._attrs_key, {})
-            self._data.setdefault(self._items_key, {})
+            self._data.setdefault(self._attrs_key, self._attrs_cls())
+            self._data.setdefault(self._items_key, self._items_cls())
     
     _wrap_attr = wrap_attr
     _unwrap_attr = unwrap_attr

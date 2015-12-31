@@ -3,6 +3,14 @@ import functools as ft
 from . import accessors, coercions, indexers
 
 
+def itemproperty(key):
+    return property(accessors.itemgetter(key), accessors.itemsetter(key))
+
+
+def itemproperties(keys):
+    return [itemproperty(key) for key in keys]
+
+
 def attrcached(attr):
     def decorator(func):
         @ft.wraps(func)

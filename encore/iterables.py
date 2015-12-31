@@ -1,10 +1,17 @@
 import collections
+
+import functools as ft
 import itertools as it
 
 drop = lambda iterable, n: it.islice(iterable, n, None)
 take = lambda iterable, n: it.islice(iterable, None, n)
 
 nth = lambda iterable, n, default=None: next(drop(iterable, n), default)
+
+
+def populate(arr, iterable):
+    for key, value in zip(range(len(arr)), iterable):
+        arr[key] = value
 
 
 def split(iterable, n):
@@ -23,6 +30,12 @@ def flattened(iterable):
                 yield item
         else:
             yield items
+
+            
+def cycled(iterable, n):
+    for _ in range(n):
+        for item in iterable:
+            yield item
 
 
 def repeated(iterable, n):
