@@ -1,3 +1,5 @@
+import sys
+
 import collections
 import json
 
@@ -60,12 +62,12 @@ def hasitems(obj):
 def _getattr(self, key):
     attrs = attrsof(self, dataof(self))
     if not isinstance(attrs, collections.MutableMapping):
-        raise AttributeError(key)
+        return accessors.getattr(attrs, key)
     else:
         try:
             return accessors.getitem(attrs, key)
         except KeyError:
-            raise AttributeError(key)
+            return accessors.getattr(attrs, key)
     
     
 def _setattr(self, key, value):
@@ -113,30 +115,14 @@ def type_to_string(obj):
 
 def string_to_type(obj):
     if isinstance(obj, str):
-        parts = obj.split('.')
-        module_name, class_name = parts[:-1], parts[-1]
-        
-        if not module_name:
-            # TODO: Is this correct?
-            module_name = "__main__"
-        
-        module_name = ".".join(module_name)
-        m = __import__(module_name, globals(), locals(), class_name)
-        c = accessors.getattr(m, class_name)
+        parts = obj.rsplit('.', 1)
+        if len(parts) > 1:
+            m = __import__(parts[0], globals(), locals(), parts[1])
+        else:
+            m =  sys.modules['__main__']
+        c = accessors.getattr(m, parts[-1])
         return c
     return obj
-
-
-def as_schema(func):
-    if isinstance(func, Schema):
-        return func
-    return Schema(func=func)
-
-
-def as_visitor(func):
-    if isinstance(func, Visitor):
-        return func
-    return Visitor(func)
 
 
 def apply(value, view): 
@@ -145,12 +131,12 @@ def apply(value, view):
 
 
 def visit(value, func):    
-    return apply(value, as_visitor(func))
+    return apply(value, Visitor.as_view(func))
 
 
 def reify(value, schema):
-    if schema._type is not None:
-        type_ = string_to_type(schema._type)
+    if schema.type is not None:
+        type_ = string_to_type(schema.type)
         
         result = type_()
         setstate(result, value)
@@ -193,99 +179,85 @@ def reify(value, schema):
 
 
 class View(object):
-    def __init__(self, attrs=None, items=None):
+    @classmethod
+    def as_view(cls, func):
+        if isinstance(func, cls):
+            return func
+        return cls(func=func)
+    
+    def __init__(self, func=None, attrs=None, items=None):
         super().__init__()
 
+        self.func = func
         self.attrs = attrs
         self.items = items
     
     def attr(self, key):
         if isinstance(self.attrs, collections.Mapping):
             default = self.attrs.get("*")
-            return self.attrs.get(key, default)
-        return self.attrs
+            return self.as_view(self.attrs.get(key, default))
+        else:
+            return self.as_view(self.attrs)
     
     def item(self, key):
         if isinstance(self.items, collections.Mapping):
             default = self.items.get("*")
-            return self.items.get(key, default)
-        return self.items
+            return self.as_view(self.items.get(key, default))
+        else:
+            return self.as_view(self.items)
     
     def __call__(self, value):
-        return dataof(value)
-
-
-class Schema(View):
-    def __init__(self, type=None, func=None, attrs=None, items=None):
-        super().__init__(attrs, items)
-        
-        self._type = type
-        self._func = func
-    
-    def attr(self, key):
-        return as_schema(super().attr(key))
-    
-    def item(self, key):
-        return as_schema(super().item(key))
-    
-    def update(self, type=None, func=None):
-        self._type = self._type if type is None else type
-        self._func = self._func if func is None else func
-    
-    def __call__(self, value):
-        self.update(type=typeof(value))
-        
-        result = reify(value, self)
-            
-        func = utilities.identity if self._func is None else self._func
-        
-        return func(result) 
-    
-    def __repr__(self):
-        return "Schema{{{}}}".format(repr(self._type))
-    
-    def __str__(self):
-        return "Schema{{{}}}".format(str(self._type))
+        func = utilities.identity if self.func is None else self.func
+        return func(dataof(value))
 
 
 class Visitor(View):
     def __init__(self, func=None, attrs=None, items=None):
-        super().__init__(attrs, items)
-        
-        self._func = func
-    
-    def attr(self, key):
-        return as_visitor(super().attr(key))
-    
-    def item(self, key):
-        return as_visitor(super().item(key))
+        super().__init__(func, attrs, items)
     
     def __call__(self, value):
         data = dataof(value)
         attrs = attrsof(value)
         items = itemsof(value)
         
-        #print(value)
-        
         if isinstance(attrs, collections.Mapping) or isinstance(items, collections.Mapping):
             if self.attrs and isinstance(attrs, collections.Mapping):
                 for key, _ in attrs.items():
                     accessors.getattr(value, key)
-                    #accessors.setattr(value, key, accessors.getattr(value, key))
                 
             if self.items and isinstance(items, collections.Mapping):
                 for key, _ in items.items():
                     accessors.getitem(value, key)
-                    #accessors.setitem(value, key, accessors.getitem(value, key))
         else:
             if self.items and isinstance(data, collections.Mapping):
                 for key, _ in data.items():
                     accessors.getitem(value, key)
-                    #accessors.setitem(value, key, accessors.getitem(value, key))
         
-        func = utilities.identity if self._func is None else self._func
+        return super().__call__(value)
+
+
+class Schema(View):
+    def __init__(self, type=None, func=None, attrs=None, items=None):
+        super().__init__(func, attrs, items)
         
-        return func(dataof(value))
+        self.type = type
+    
+    def update(self, type=None):
+        self.type = self.type if type is None else type
+    
+    def __call__(self, value):
+        self.update(type=typeof(value))
+        
+        result = reify(value, self)
+            
+        func = utilities.identity if self.func is None else self.func
+        return func(result) 
+    
+    def __repr__(self):
+        return "Schema{{{}}}".format(repr(self.type))
+    
+    def __str__(self):
+        return "Schema{{{}}}".format(str(self.type))
 
 
 def defaultsetstate(self, other):
@@ -520,7 +492,7 @@ def save(data, schema=None):
 
 def load(data, schema=None):
     value = load_raw(data)
-    return apply(value, as_schema(schema))
+    return apply(value, Schema.as_view(schema))
 
 
 def save_file(file, data, schema=None):
@@ -529,7 +501,7 @@ def save_file(file, data, schema=None):
 
 def load_file(file, schema=None):
     value = load_file_raw(file)
-    return apply(value, as_schema(schema))
+    return apply(value, Schema.as_view(schema))
 
 
 def save_path(path, data, schema=None):
