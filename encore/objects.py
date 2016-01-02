@@ -76,7 +76,55 @@ def hasattrs(obj):
 def hasitems(obj):
     return itemsof(obj) is not None
 
+
+def _getattr(self, key):
+    attrs = attrsof(self, dataof(self))
+    if not isinstance(attrs, collections.MutableMapping):
+        raise AttributeError(key)
+    else:
+        try:
+            return accessors.getitem(attrs, key)
+        except KeyError:
+            raise AttributeError(key)
     
+    
+def _setattr(self, key, value):
+    attrs = attrsof(self, dataof(self))
+    if not isinstance(attrs, collections.MutableMapping):
+        accessors.setitem(self.__dict__, key, value)
+    else:
+        if key in self.__dict__:
+            accessors.setitem(self.__dict__, key, value)
+        else:
+            accessors.setitem(attrs, key, value)
+
+
+def _delattr(self, key):
+    attrs = attrsof(self, dataof(self))
+    if not isinstance(attrs, collections.MutableMapping):
+        accessors.delitem(self.__dict__, key)
+    else:
+        if key in self.__dict__:
+            accessors.delitem(self.__dict__, key)
+        else:
+            accessors.delitem(attrs, key)
+
+
+def _getitem(self, key):
+    items = itemsof(self, dataof(self))
+    return accessors.getitem(items, key)
+
+
+def _setitem(self, key, value):
+    items = itemsof(self, dataof(self))
+    accessors.setitem(items, key, value)
+
+
+def _delitem(self, key, value):
+    items = itemsof(self, dataof(self))
+    accessors.delitem(items, key)
+
+
 def type_to_string(obj):
     if isinstance(obj, type):
         return obj.__qualname__
@@ -126,10 +174,10 @@ def _reify(obj, meta=None):
         result = dataof(obj)
         
         if isinstance(result, collections.Sequence) and not isinstance(result, str):
-            result = type(result)(reify(value, meta=meta.itemmeta()) for value in result)
+            result = type(result)(reify(value, meta=itemmeta(meta)) for value in result)
         
         if isinstance(result, collections.Mapping):
-            result = type(result)((key, reify(value, meta=meta.itemmeta(key))) for key, value in result.items())
+            result = type(result)((key, reify(value, meta=itemmeta(meta, key))) for key, value in result.items())
         
         return result
 
@@ -175,6 +223,7 @@ def setstate(self, other):
     _setstate = accessors.getattr(type(self), "__setstate__", defaultsetstate)
     _setstate(self, other)
 
+
 class Meta(object):
     def __init__(self, type=None, attrs=None, items=None):
         super().__init__()
@@ -182,16 +231,6 @@ class Meta(object):
         self._type = string_to_type(type)
         self._attrs = attrs
         self._items = items
-
-    def attrmeta(self, key=None):
-        if isinstance(self._attrs, collections.Mapping):
-            return self._attrs.get(key)
-        return self._attrs
-    
-    def itemmeta(self, key=None):
-        if isinstance(self._items, collections.Mapping):
-            return self._items.get(key)
-        return self._items
     
     def __call__(self, data):
         return reify(data, meta=self)
@@ -203,6 +242,20 @@ class Meta(object):
         return "Meta{{{}}}".format(", ".join(map(repr, filter(None, [self._type, self._attrs, self._items]))))
 
 
+def attrmeta(self, key=None):
+    meta, _ = disambiguate_meta(self)
+    if isinstance(meta._attrs, collections.Mapping):
+        return meta._attrs.get(key)
+    return meta._attrs
+
+
+def itemmeta(self, key=None):
+    meta, _ = disambiguate_meta(self)
+    if isinstance(meta._items, collections.Mapping):
+        return meta._items.get(key)
+    return meta._items
+
+    
 class Object(object):
     _type_key = "type"
     _attrs_key = "attrs"
@@ -222,39 +275,43 @@ class Object(object):
         self._data = data
     
     def __getattr__(self, key):
-        if not isinstance(self._data, collections.Mapping):
-            raise AttributeError(key)
+        value = _getattr(self, key)
+        return reify(value, meta=attrmeta(metaof(self), key))
         
-        meta, _ = disambiguate_meta(metaof(self))
-        attrmeta = meta.attrmeta(key)
+    def __setattr__(self, key, value):
+        _setattr(self, key, value)
         
-        attrs = attrsof(self, dataof(self))
-        #print("getattr", key, attrmeta)
-        return reify(accessors.getitem(attrs, key), meta=attrmeta)
-        
-    def __getitem__(self, key):
-        if not isinstance(self._data, collections.Mapping):
-            raise KeyError(key)
-        
-        meta, _ = disambiguate_meta(metaof(self))
-        itemmeta = meta.itemmeta(key)
-        
-        items = itemsof(self, dataof(self))
-        #print("getitem", key, itemmeta)
-        return reify(accessors.getitem(items, key), meta=itemmeta)
+    def __delattr__(self, key):
+        _delattr(self, key, value)
     
+    def __getitem__(self, key):
+        value = _getitem(self, key)
+        return reify(value, meta=itemmeta(metaof(self), key))
+    
+    def __setitem__(self, key, value):
+        _setitem(self, key, value)
+        
+    def __delitem__(self, key):
+        _delitem(self, key)
+    
+    def insert(self, key, value):
+        items = itemsof(self, dataof(self))
+        
+        if isinstance(items, collections.MutableSequence):
+            items.insert(key, value)
+        else:
+            accessors.setitem(items, key, value)
+        
     def __iter__(self):
-        meta, _ = disambiguate_meta(metaof(self))
+        items = itemsof(self, dataof(self))
         
-        items = itemsof(self)
-        
-        if isinstance(items, collections.Sequence):
-            return iter(reify(item, meta=meta.itemmeta()) for item in items)
+        if isinstance(items, collections.MutableSequence):
+            return iter(reify(item, meta=itemmeta(metaof(self))) for item in items)
         else:
             return iter(items)
     
     def __len__(self):
-        items = itemsof(self)
+        items = itemsof(self, dataof(self))
         return len(items)
     
     def cast(self, meta):
@@ -307,12 +364,21 @@ def load(data, meta=None):
     return reify(data, meta=meta)
 
     
-def save_file(data, path, meta=None):
+def save_file(file, data, meta=None):
+    json.dump(data, file, cls=ObjectEncoder)
+
+
+def load_file(file, meta=None):
+    data = json.load(file, cls=ObjectDecoder, object_pairs_hook=collections.OrderedDict)
+    return reify(data, meta=meta)
+
+
+def save_path(path, data, meta=None):
     with open(path, 'w') as file:
         json.dump(data, file, cls=ObjectEncoder)
 
 
-def load_file(path, meta=None):
+def load_path(path, meta=None):
     with open(path, 'r') as file:
         data = json.load(file, cls=ObjectDecoder, object_pairs_hook=collections.OrderedDict)
         return reify(data, meta=meta)
