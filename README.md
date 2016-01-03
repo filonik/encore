@@ -117,7 +117,7 @@ Special attribute names ("\_\_type\_\_", "\_\_attrs\_\_", "\_\_items\_\_") are f
 ```python
 from encore import defaults
 
-defaults.DEFAULT_OBJECTS_ATTRS_KEY = "py/type"
+defaults.DEFAULT_OBJECTS_TYPE_KEY = "py/type"
 defaults.DEFAULT_OBJECTS_ATTRS_KEY = "py/attrs"
-defaults.DEFAULT_OBJECTS_ATTRS_KEY = "py/items"
+defaults.DEFAULT_OBJECTS_ITEMS_KEY = "py/items"
 ```
