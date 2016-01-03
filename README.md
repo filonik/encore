@@ -88,19 +88,24 @@ def print_info(obj):
 # Default Python JSON representation
 print_info(objects.load('{"a": false, "b": 1, "c": "2"}'))
 
+
 # Type Annotation in Python, result:
-# Foo object, default __setstate__ -> set items as attributes 
+# Foo object, default __setstate__ -> implementation (set items as attributes)
 print_info(objects.load('{"a": false, "b": 1, "c": "2"}', schema=objects.Schema(Foo)))
 
-# Foo object, default __setstate__ -> set items as attributes with custom conversion
+# Foo object, default __setstate__ -> implementation (set items as attributes) with custom item conversion
 print_info(objects.load('{"a": false, "b": 1, "c": "2"}', schema=objects.Schema(Foo, items=int)))
 
-# Bar object, uses custom __setstate__ implementation
+# Bar object, custom __setstate__ implementation
 print_info(objects.load('{"a": false, "b": 1, "c": "2"}', schema=objects.Schema(Bar)))
+
+# Bar object, custom __setstate__ implementation with custom item conversion
+print_info(objects.load('{"a": false, "b": 1, "c": "2"}', schema=objects.Schema(Bar, items=int)))
+
 
 # Type Annotation in JSON, result:
 # Foo object, default __setstate__ -> set items as attributes 
 print_info(objects.load('{"__type__": "Foo", "__attrs__": {"a": false, "b": 1, "c": "2"}}'))
 ```
 
-Special attribute names ("__type__", "__attrs__", "__items__") are fully customizable.
+Special attribute names ("\_\_type\_\_", "\_\_attrs\_\_", "\_\_items\_\_") are fully customizable.

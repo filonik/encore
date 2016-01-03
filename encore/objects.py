@@ -450,6 +450,12 @@ class Value(object):
     def __delitem__(self, key):
         _delitem(self, key)
     
+    def get(self, key, default=None):
+        try:
+            return self[key]
+        except KeyError:
+            return default
+    
     def view(self, view):
         return Value(self._data, view)
     
