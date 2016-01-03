@@ -456,6 +456,29 @@ class Value(object):
         except KeyError:
             return default
     
+    def __len__(self):
+        items = itemsof(self, dataof(self))
+        return len(items)
+    
+    def items(self):
+        for key in self.keys():
+            yield key, self[key]
+    
+    def keys(self):
+        items = itemsof(self, dataof(self))
+        
+        if isinstance(items, collections.Mapping):
+            return iter(items)
+        
+        if isinstance(items, collections.Sequence):
+            return range(len(items))
+        
+        return iter([])
+    
+    def values(self):
+        for key in self.keys():
+            yield self[key]
+    
     def view(self, view):
         return Value(self._data, view)
     
