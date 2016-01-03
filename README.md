@@ -66,26 +66,41 @@ class Foo(object):
         return str(self.__dict__)
 
 
+class Bar(object):
+    __module__ = "example"
+    
+    def __setstate__(self, data):
+        self.a = data.get("a")
+        self.b = data.get("b")
+    
+    def __repr__(self):
+        return repr(self.__dict__)
+    
+    def __str__(self):
+        return str(self.__dict__)
+
+
 def print_info(obj):
     print(type(obj).__name__, obj)
 
 
-# No Type Annotation:
-# Return default Python JSON representation
+# No Type Annotation, result:
+# Default Python JSON representation
 print_info(objects.load('{"a": false, "b": 1, "c": "2"}'))
 
-# Type Annotation in Python:
-# Create Foo object, default __setstate__ -> set items as attributes 
+# Type Annotation in Python, result:
+# Foo object, default __setstate__ -> set items as attributes 
 print_info(objects.load('{"a": false, "b": 1, "c": "2"}', schema=objects.Schema(Foo)))
 
-# Create Foo object, default __setstate__ -> set items as attributes with custom conversion
+# Foo object, default __setstate__ -> set items as attributes with custom conversion
 print_info(objects.load('{"a": false, "b": 1, "c": "2"}', schema=objects.Schema(Foo, items=int)))
 
-# Create Bar object, use provided __setstate__
+# Bar object, uses custom __setstate__ implementation
 print_info(objects.load('{"a": false, "b": 1, "c": "2"}', schema=objects.Schema(Bar)))
 
-# Type Annotation in JSON:
-print_info(objects.load('{"__type__": "A", "__attrs__": {"a": false, "b": 1, "c": "2"}}'))
+# Type Annotation in JSON, result:
+# Foo object, default __setstate__ -> set items as attributes 
+print_info(objects.load('{"__type__": "Foo", "__attrs__": {"a": false, "b": 1, "c": "2"}}'))
 ```
 
 Special attribute names ("__type__", "__attrs__", "__items__") are fully customizable.

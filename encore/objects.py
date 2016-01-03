@@ -222,8 +222,6 @@ def reify(value, schema):
             elif isinstance(data, collections.Mapping):
                 data = type(data)((key, apply(value, schema.item(key))) for key, value in data.items())
             
-            #print(dataof(value), data)
-            
             return data
         else:
             if attrs is None:
@@ -472,7 +470,7 @@ class ValueEncoder(json.JSONEncoder):
 class ValueDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
         object_hook = kwargs.pop("object_hook", utilities.identity)
-        object_pairs_hook = kwargs.pop("object_pairs_hook", utilities.identity)
+        object_pairs_hook = kwargs.pop("object_pairs_hook", dict)
         
         def _object_hook(data):
             result = Value()
@@ -485,45 +483,49 @@ class ValueDecoder(json.JSONDecoder):
         super().__init__(*args, **kwargs)
 
 
-def save_raw(data):
-    return json.dumps(data, cls=ValueEncoder)
+def save_file_raw(data, file, *args, **kwargs):
+    kwargs.setdefault("cls", ValueEncoder)
+    return json.dump(data, file, *args, **kwargs)
 
 
-def load_raw(data):
-    return json.loads(data, cls=ValueDecoder, object_pairs_hook=collections.OrderedDict)
+def load_file_raw(file, *args, **kwargs):
+    kwargs.setdefault("cls", ValueDecoder)
+    return json.load(file, *args, **kwargs)
 
 
-def save_file_raw(file, data):
-    return json.dump(data, file, cls=ValueEncoder)
+def save_raw(data, *args, **kwargs):
+    kwargs.setdefault("cls", ValueEncoder)
+    return json.dumps(data, *args, **kwargs)
 
 
-def load_file_raw(file):
-    return json.load(file, cls=ValueDecoder, object_pairs_hook=collections.OrderedDict)
+def load_raw(data, *args, **kwargs):
+    kwargs.setdefault("cls", ValueDecoder)
+    return json.loads(data, *args, **kwargs)
 
 
-def save(data, schema=None):
-    return save_raw(data)
+def save(data, schema=None, *args, **kwargs):
+    return save_raw(data, *args, **kwargs)
 
 
-def load(data, schema=None):
-    value = load_raw(data)
+def load(data, schema=None, *args, **kwargs):
+    value = load_raw(data, *args, **kwargs)
     return apply(value, Schema.as_view(schema))
 
 
-def save_file(file, data, schema=None):
-    return save_file_raw(file, data)
+def save_file(data, file, schema=None, *args, **kwargs):
+    return save_file_raw(data, file, *args, **kwargs)
 
 
-def load_file(file, schema=None):
-    value = load_file_raw(file)
+def load_file(file, schema=None, *args, **kwargs):
+    value = load_file_raw(file, *args, **kwargs)
     return apply(value, Schema.as_view(schema))
 
 
-def save_path(path, data, schema=None):
+def save_path(path, data, schema=None, *args, **kwargs):
     with open(path, 'w') as file:
-        return save_file(file, data, schema=schema)
+        return save_file(data, file, schema=schema, *args, **kwargs)
 
 
-def load_path(path, schema=None):
+def load_path(path, schema=None, *args, **kwargs):
     with open(path, 'r') as file:
-        return load_file(file, schema=schema)
+        return load_file(file, schema=schema, *args, **kwargs)
