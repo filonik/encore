@@ -260,6 +260,14 @@ class Schema(View):
         return "Schema{{{}}}".format(str(self.type))
 
 
+def defaultsetparent(self, parent):
+    if isinstance(self, (type(None), bool, int, float, str, list, dict)):
+        return
+    
+    if defaults.DEFAULT_OBJECTS_PARENT_ATTR_ENABLED:
+        accessors.setattr(self, defaults.DEFAULT_OBJECTS_PARENT_ATTR, parent)
+
+
 def defaultsetstate(self, other):
     data = dataof(other)
     attrs = attrsof(other)
@@ -268,25 +276,35 @@ def defaultsetstate(self, other):
     if attrs is None and items is None:
         for key in data:
             #print("setattr", key, accessors.getattr(other, key))
-            accessors.setattr(self, key, accessors.getattr(other, key))
+            value = accessors.getattr(other, key)
+            accessors.setattr(self, key, value)
+            defaultsetparent(value, self)
         
     if attrs is not None:
         if isinstance(attrs, collections.Sequence):
             for key in range(len(attrs)):
-                self.append(accessors.getattr(other, key))
+                value = accessors.getattr(other, key)
+                self.append(value)
+                defaultsetparent(value, self)
         else:
             for key in attrs:
                 #print("setattr", key, accessors.getattr(other, key))
-                accessors.setattr(self, key, accessors.getattr(other, key))
+                value = accessors.getattr(other, key)
+                accessors.setattr(self, key, value)
+                defaultsetparent(value, self)
     
     if items is not None:
         if isinstance(items, collections.Sequence):
             for key in range(len(items)):
-                self.append(accessors.getitem(other, key))
+                value = accessors.getitem(other, key)
+                self.append(value)
+                defaultsetparent(value, self)
         else:
             for key in items:
                 #print("setitem", key, accessors.getitem(other, key))
-                accessors.setitem(self, key, accessors.getitem(other, key))
+                value = accessors.getitem(other, key)
+                accessors.setitem(self, key, value)
+                defaultsetparent(value, self)
 
 
 def setstate(self, other):
@@ -322,8 +340,8 @@ class Object(object):
             self._data = {} if data is None else data
             
             if data is None:
-                attrs = {} if attrs is None else attrs
-                items = {} if items is None else items
+                attrs = collections.OrderedDict() if attrs is None else attrs
+                items = collections.OrderedDict() if items is None else items
                 
                 accessors.setitem(self._data, self._type_key, type)
                 accessors.setitem(self._data, self._attrs_key, attrs)
