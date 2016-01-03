@@ -115,9 +115,10 @@ print_info(objects.load('{"__type__": "Foo", "__attrs__": {"a": false, "b": 1, "
 Special attribute names ("\_\_type\_\_", "\_\_attrs\_\_", "\_\_items\_\_") are fully customizable.
 
 ```python
-from encore import defaults
+import encore.defaults
 
-defaults.DEFAULT_OBJECTS_TYPE_KEY = "py/type"
-defaults.DEFAULT_OBJECTS_ATTRS_KEY = "py/attrs"
-defaults.DEFAULT_OBJECTS_ITEMS_KEY = "py/items"
+# Before importing objects module
+encore.defaults.DEFAULT_OBJECTS_TYPE_KEY = "py/type"
+encore.defaults.DEFAULT_OBJECTS_ATTRS_KEY = "py/attrs"
+encore.defaults.DEFAULT_OBJECTS_ITEMS_KEY = "py/items"
 ```
