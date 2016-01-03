@@ -113,3 +113,11 @@ print_info(objects.load('{"__type__": "Foo", "__attrs__": {"a": false, "b": 1, "
 ```
 
 Special attribute names ("\_\_type\_\_", "\_\_attrs\_\_", "\_\_items\_\_") are fully customizable.
+
+```python
+from encore import defaults
+
+defaults.DEFAULT_OBJECTS_ATTRS_KEY = "py/type"
+defaults.DEFAULT_OBJECTS_ATTRS_KEY = "py/attrs"
+defaults.DEFAULT_OBJECTS_ATTRS_KEY = "py/items"
+```
