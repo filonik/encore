@@ -90,10 +90,10 @@ print_info(objects.load('{"a": false, "b": 1, "c": "2"}'))
 
 
 # Type Annotation in Python, result:
-# Foo object, default __setstate__ -> implementation (set items as attributes)
+# Foo object, default __setstate__ implementation (set items as attributes)
 print_info(objects.load('{"a": false, "b": 1, "c": "2"}', schema=objects.Schema(Foo)))
 
-# Foo object, default __setstate__ -> implementation (set items as attributes) with custom item conversion
+# Foo object, default __setstate__ implementation (set items as attributes) with custom item conversion
 print_info(objects.load('{"a": false, "b": 1, "c": "2"}', schema=objects.Schema(Foo, items=int)))
 
 # Bar object, custom __setstate__ implementation
@@ -101,6 +101,10 @@ print_info(objects.load('{"a": false, "b": 1, "c": "2"}', schema=objects.Schema(
 
 # Bar object, custom __setstate__ implementation with custom item conversion
 print_info(objects.load('{"a": false, "b": 1, "c": "2"}', schema=objects.Schema(Bar, items=int)))
+
+# Bar object with Foo object items (Schema Composition)
+print_info(objects.load('{"a": {"a": "One", "b": 1}, "b": {"a": "Two", "b": 2}}', schema=objects.Schema(Bar, items=objects.Schema(Foo))))
+
 
 
 # Type Annotation in JSON, result:
