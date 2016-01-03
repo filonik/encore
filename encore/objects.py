@@ -38,7 +38,7 @@ def attrsof(obj, default=None):
             return dataof(data.get(Object._attrs_key, default))
     return default
 
-    
+
 def itemsof(obj, default=None):
     if isinstance(obj, (Value, Object)):
         data = dataof(obj)
@@ -134,7 +134,70 @@ def visit(value, func):
     return apply(value, Visitor.as_view(func))
 
 
+def defaultsetparent(self, parent):
+    if isinstance(self, (type(None), bool, int, float, str, list, dict)):
+        return
+    
+    if defaults.DEFAULT_OBJECTS_PARENT_ATTR_ENABLED:
+        accessors.setattr(self, defaults.DEFAULT_OBJECTS_PARENT_ATTR, parent)
+
+
+def defaultsetstate(self, other):
+    data = dataof(other)
+    attrs = attrsof(other)
+    items = itemsof(other)
+    
+    #print("setstate", attrs, items)
+    #print("setstate", data)
+    
+    if attrs is None and items is None:
+        if isinstance(items, collections.Sequence):
+            for key in range(len(data)):
+                value = accessors.getitem(other, key)
+                self.append(value)
+                defaultsetparent(value, self)
+        else:
+            for key in data:
+                #print("setattr", key, accessors.getitem(other, key))
+                value = accessors.getitem(other, key)
+                accessors.setattr(self, key, value)
+                defaultsetparent(value, self)
+    
+    if attrs is not None:
+        if isinstance(attrs, collections.Sequence):
+            for key in range(len(attrs)):
+                value = accessors.getattr(other, key)
+                self.append(value)
+                defaultsetparent(value, self)
+        else:
+            for key in attrs:
+                #print("setattr", key, accessors.getattr(other, key))
+                value = accessors.getattr(other, key)
+                accessors.setattr(self, key, value)
+                defaultsetparent(value, self)
+    
+    if items is not None:
+        if isinstance(items, collections.Sequence):
+            for key in range(len(items)):
+                value = accessors.getitem(other, key)
+                self.append(value)
+                defaultsetparent(value, self)
+        else:
+            for key in items:
+                #print("setitem", key, accessors.getitem(other, key))
+                value = accessors.getitem(other, key)
+                accessors.setitem(self, key, value)
+                defaultsetparent(value, self)
+
+
+def setstate(self, other):
+    _setstate = accessors.getattr(type(self), "__setstate__", defaultsetstate)
+    _setstate(self, other)
+
+
 def reify(value, schema):
+    #print("reify", schema)
+    
     if schema.type is not None:
         type_ = string_to_type(schema.type)
         
@@ -158,8 +221,10 @@ def reify(value, schema):
                 data = type(data)(apply(value, schema.item()) for value in data)
             elif isinstance(data, collections.Mapping):
                 data = type(data)((key, apply(value, schema.item(key))) for key, value in data.items())
-                
-            return Object(data=data)
+            
+            #print(dataof(value), data)
+            
+            return data
         else:
             if attrs is None:
                 pass 
@@ -192,14 +257,14 @@ class View(object):
         self.attrs = attrs
         self.items = items
     
-    def attr(self, key):
+    def attr(self, key=None):
         if isinstance(self.attrs, collections.Mapping):
             default = self.attrs.get("*")
             return self.as_view(self.attrs.get(key, default))
         else:
             return self.as_view(self.attrs)
     
-    def item(self, key):
+    def item(self, key=None):
         if isinstance(self.items, collections.Mapping):
             default = self.items.get("*")
             return self.as_view(self.items.get(key, default))
@@ -258,74 +323,6 @@ class Schema(View):
     
     def __str__(self):
         return "Schema{{{}}}".format(str(self.type))
-
-
-def defaultsetparent(self, parent):
-    if isinstance(self, (type(None), bool, int, float, str, list, dict)):
-        return
-    
-    if defaults.DEFAULT_OBJECTS_PARENT_ATTR_ENABLED:
-        accessors.setattr(self, defaults.DEFAULT_OBJECTS_PARENT_ATTR, parent)
-
-
-def defaultsetstate(self, other):
-    data = dataof(other)
-    attrs = attrsof(other)
-    items = itemsof(other)
-    
-    if attrs is None and items is None:
-        for key in data:
-            #print("setattr", key, accessors.getattr(other, key))
-            value = accessors.getattr(other, key)
-            accessors.setattr(self, key, value)
-            defaultsetparent(value, self)
-        
-    if attrs is not None:
-        if isinstance(attrs, collections.Sequence):
-            for key in range(len(attrs)):
-                value = accessors.getattr(other, key)
-                self.append(value)
-                defaultsetparent(value, self)
-        else:
-            for key in attrs:
-                #print("setattr", key, accessors.getattr(other, key))
-                value = accessors.getattr(other, key)
-                accessors.setattr(self, key, value)
-                defaultsetparent(value, self)
-    
-    if items is not None:
-        if isinstance(items, collections.Sequence):
-            for key in range(len(items)):
-                value = accessors.getitem(other, key)
-                self.append(value)
-                defaultsetparent(value, self)
-        else:
-            for key in items:
-                #print("setitem", key, accessors.getitem(other, key))
-                value = accessors.getitem(other, key)
-                accessors.setitem(self, key, value)
-                defaultsetparent(value, self)
-
-
-def setstate(self, other):
-    _setstate = accessors.getattr(type(self), "__setstate__", defaultsetstate)
-    _setstate(self, other)
-
-
-def attrmeta(self, key=None):
-    if isinstance(self, Meta):
-        if isinstance(self._attrs, collections.Mapping):
-            return self._attrs.get(key)
-        return self._attrs
-    return None
-
-
-def itemmeta(self, key=None):
-    if isinstance(self, Meta):
-        if isinstance(self._items, collections.Mapping):
-            return self._items.get(key)
-        return self._items
-    return None
 
 
 class Object(object):
