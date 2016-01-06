@@ -5,7 +5,7 @@ from setuptools import setup
 setup(
     install_requires=[],
     name="encore",
-    version = "0.5",
+    version = "0.6",
     license = 'MIT',
     author="Daniel Filonik",
     author_email="d.filonik@hdr.qut.edu.au",

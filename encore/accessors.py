@@ -129,4 +129,4 @@ def lazy_defaultproperty(key, default=None):
 
 
 def defaultproperty(key, default=None):
-    return lazydefaultproperty(key, default=utilities.constant(default))
+    return lazy_defaultproperty(key, default=utilities.constant(default))
