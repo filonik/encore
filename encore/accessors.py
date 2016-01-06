@@ -116,3 +116,17 @@ def setdefaultattr(obj, key, default):
 
 def setdefaultitem(obj, key, default):
     return lazy_setdefaultitem(obj, key, utilities.constant(default))
+
+
+def lazy_defaultproperty(key, default=None):
+    def getter(self):
+        return getitem(self.__dict__, key, default())
+    def setter(self, value):
+        return setitem(self.__dict__, key, value)
+    def deleter(self):
+        return delitem(self.__dict__, key)
+    return property(getter, setter, deleter)
+
+
+def defaultproperty(key, default=None):
+    return lazydefaultproperty(key, default=utilities.constant(default))

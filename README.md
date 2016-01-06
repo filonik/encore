@@ -108,8 +108,11 @@ print_info(objects.load('{"a": {"a": "One", "b": 1}, "b": {"a": "Two", "b": 2}}'
 
 
 # Type Annotation in JSON, result:
-# Foo object, default __setstate__ -> set items as attributes 
+# Foo object, default __setstate__ implementation (set items as attributes)
 print_info(objects.load('{"__type__": "Foo", "__attrs__": {"a": false, "b": 1, "c": "2"}}'))
+
+# Bar object, custom __setstate__ implementation
+print_info(objects.load('{"__type__": "Bar", "__attrs__": {"a": false, "b": 1, "c": "2"}}'))
 ```
 
 Special attribute names ("\_\_type\_\_", "\_\_attrs\_\_", "\_\_items\_\_") are fully customizable.

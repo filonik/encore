@@ -151,7 +151,7 @@ def defaultsetstate(self, other):
     #print("setstate", data)
     
     if attrs is None and items is None:
-        if isinstance(items, collections.Sequence):
+        if isinstance(data, collections.Sequence):
             for key in range(len(data)):
                 value = accessors.getitem(other, key)
                 self.append(value)
