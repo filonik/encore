@@ -19,12 +19,12 @@ def iterkeys(container):
 
 
 def itervalues(container):
-    for key in keys(container):
+    for key in iterkeys(container):
         yield accessors.getitem(container, key)
 
 
 def iteritems(container):
-    for key in keys(container):
+    for key in iterkeys(container):
         yield key, accessors.getitem(container, key)
 
 
