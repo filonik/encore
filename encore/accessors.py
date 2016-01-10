@@ -130,3 +130,29 @@ def lazy_defaultproperty(key, default=None):
 
 def defaultproperty(key, default=None):
     return lazy_defaultproperty(key, default=utilities.constant(default))
+
+
+class Accessor(object):
+    @classmethod
+    def from_attr(cls, key):
+        return cls(attrgetter(key), attrsetter(key))
+    
+    @classmethod
+    def from_item(cls, key):
+        return cls(itemgetter(key), itemsetter(key))
+    
+    def __init__(self, fget=None, fset=None):
+        super().__init__()
+        
+        self.fget = utilities.constant(None) if fget is None else fget
+        self.fset = utilities.constant(None) if fset is None else fset
+    
+    def get(self, obj):
+        return self.fget(obj)
+        
+    def set(self, obj, value):
+        return self.fset(obj, value)
+    
+    def __call__(self, obj):
+        return self.get(obj)
+
