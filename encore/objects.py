@@ -356,16 +356,25 @@ class Object(object):
         copystate(self, state, True)
     
     def __getattr__(self, key):
-        attrs = attrsof(self, dataof(self))
-        return accessors.getitem(attrs, key)
+        try:
+            attrs = attrsof(self, dataof(self))
+            return accessors.getitem(attrs, key)
+        except KeyError:
+            raise AttributeError(key)
         
     def __setattr__(self, key, value):
-        attrs = attrsof(self, dataof(self))
-        accessors.setitem(attrs, key, value)
+        if key in self.__dict__:
+            accessors.setitem(self.__dict__, key, value)
+        else:
+            attrs = attrsof(self, dataof(self))
+            accessors.setitem(attrs, key, value)
         
     def __delattr__(self, key):
-        attrs = attrsof(self, dataof(self))
-        accessors.delitem(attrs, key)
+        if key in self.__dict__:
+            accessors.delitem(self.__dict__, key)
+        else:
+            attrs = attrsof(self, dataof(self))
+            accessors.delitem(attrs, key)
     
     def __getitem__(self, key):
         items = itemsof(self, dataof(self))
@@ -386,6 +395,14 @@ class Object(object):
     def __len__(self):
         items = itemsof(self, dataof(self))
         return accessors.lenitems(items)
+    
+    def get(self, key, default=None):
+        items = itemsof(self, dataof(self))
+        return accessors.getitem(items, key, default)
+    
+    def setdefault(self, key, value):
+        items = itemsof(self, dataof(self))
+        return items.setdefault(key, value)
     
     def keys(self):
         items = itemsof(self, dataof(self))
@@ -414,10 +431,10 @@ class Object(object):
         self.insert(len(self), value)
     
     def __repr__(self):
-        return "Object{}".format(repr(self._data))
+        return "{}{}".format(type(self).__name__, repr(self._data))
     
     def __str__(self):
-        return "Object{}".format(str(self._data))
+        return "{}{}".format(type(self).__name__, str(self._data))
 
         
 def simple_decode(cls):    

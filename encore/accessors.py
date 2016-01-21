@@ -58,6 +58,45 @@ def lenitems(obj):
         return 0
 
 
+def getpath(getter):
+    def _getpath(obj, path):
+        if len(path) > 0:
+            head, *tail = path
+            return _getpath(getter(obj, head), tail)
+        else:
+            return obj
+    return _getpath
+
+
+def setpath(getter, setter):
+    def _setpath(obj, path, value):
+        if len(path) > 1:
+            head, *tail = path
+            _setpath(getter(obj, head), tail, value)
+        else:
+            setter(obj, path, value)
+    return _setpath
+
+
+def delpath(getter, deleter):
+    def _delpath(obj, path, value):
+        if len(path) > 1:
+            head, *tail = path
+            _delpath(getter(obj, head), tail)
+        else:
+            deleter(obj, path)
+    return _delpath
+
+
+getattrpath = getpath(getattr)
+setattrpath = setpath(getattr, setattr)
+delattrpath = delpath(getattr, delattr)
+
+getitempath = getpath(getitem)
+setitempath = setpath(getitem, setitem)
+delitempath = delpath(getitem, delitem)
+
+
 def attrsetter(key, obj=utilities.Unspecified):
     def f0(value):
         setattr(obj, key, value)

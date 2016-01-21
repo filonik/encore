@@ -45,6 +45,3 @@ def getdefined(obj, default=None):
 
 def getspecified(obj, default=None):
     return obj if specified(obj) else default
-
-
-
