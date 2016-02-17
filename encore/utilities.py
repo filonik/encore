@@ -45,3 +45,19 @@ def getdefined(obj, default=None):
 
 def getspecified(obj, default=None):
     return obj if specified(obj) else default
+
+
+class Bits(object):
+    @property
+    def mask(self):
+        return ((1 << self.size) - 1) << self.offset
+    
+    def __init__(self, size, offset):
+        self.size = size
+        self.offset = offset
+    
+    def decode(self, value):
+        return (value & self.mask) >> self.offset
+    
+    def encode(self, value):
+        return (value << self.offset) & self.mask

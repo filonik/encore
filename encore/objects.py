@@ -363,14 +363,20 @@ class Object(object):
             raise AttributeError(key)
         
     def __setattr__(self, key, value):
-        if key in self.__dict__:
+        _property = getattr(self.__class__, key, None)
+        if isinstance(_property, property) and _property.fset:
+            _property.fset(self, value)
+        elif key in self.__dict__:
             accessors.setitem(self.__dict__, key, value)
         else:
             attrs = attrsof(self, dataof(self))
             accessors.setitem(attrs, key, value)
         
     def __delattr__(self, key):
-        if key in self.__dict__:
+        _property = getattr(self.__class__, key, None)
+        if isinstance(_property, property) and _property.fdel:
+            _property.fdel(self)
+        elif key in self.__dict__:
             accessors.delitem(self.__dict__, key)
         else:
             attrs = attrsof(self, dataof(self))
@@ -397,12 +403,14 @@ class Object(object):
         return accessors.lenitems(items)
     
     def get(self, key, default=None):
-        items = itemsof(self, dataof(self))
-        return accessors.getitem(items, key, default)
+        return accessors.getitem(self, key, default)
     
     def setdefault(self, key, value):
-        items = itemsof(self, dataof(self))
-        return items.setdefault(key, value)
+        try:
+            return accessors.getitem(self, key)
+        except KeyError:
+            accessors.setitem(self, key, value)
+            return value
     
     def keys(self):
         items = itemsof(self, dataof(self))
