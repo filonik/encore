@@ -32,11 +32,11 @@ def distinct(iterable):
 
 
 def flattened_full(iterable):
-    if not isinstance(items, collections.Iterable) or isinstance(iterable, str):
+    if not isinstance(iterable, collections.Iterable) or isinstance(iterable, str):
         yield iterable
     else:
         for items in iterable:
-            for item in flattened(items):
+            for item in flattened_full(items):
                 yield item
 
 
@@ -45,7 +45,7 @@ def flattened_deep(iterable, depth=1):
         yield iterable
     else:
         for items in iterable:
-            for item in flattened(items, depth-1):
+            for item in flattened_deep(items, depth-1):
                 yield item
 
 

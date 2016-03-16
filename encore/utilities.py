@@ -47,6 +47,13 @@ def getspecified(obj, default=None):
     return obj if specified(obj) else default
 
 
+def truncate(value, n, indicator=None):
+    if indicator is None:
+        return (value[:n]) if len(value) > n else value
+    else:
+        return (value[:n] + indicator) if len(value) > n else value
+
+
 class Bits(object):
     @property
     def mask(self):
