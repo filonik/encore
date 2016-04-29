@@ -17,6 +17,13 @@ def direct_access(obj):
         yield
 
 
+def dereference(obj, context):
+    reference = accessors.getitem(attrsof(obj), "reference", None)
+    if reference is not None:
+        return accessors.getitem(context, accessors.getitem(reference, "target"))
+    return obj
+
+
 def type_to_str(obj):
     if isinstance(obj, type):
         return obj.__qualname__

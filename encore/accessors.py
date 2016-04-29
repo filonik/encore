@@ -105,12 +105,24 @@ def attrsetter(key, obj=utilities.Unspecified):
     return f0 if utilities.specified(obj) else f1
 
 
+def attrdeleter(key):
+    def _attrdeleter(obj):
+        delattr(obj, key)
+    return _attrdeleter
+
+
 def itemsetter(key, obj=utilities.Unspecified):
     def f0(value):
         setitem(obj, key, value)
     def f1(obj, value):
         setitem(obj, key, value)
     return f0 if utilities.specified(obj) else f1
+
+
+def itemdeleter(key):
+    def _itemdeleter(obj):
+        delitem(obj, key)
+    return _itemdeleter
 
 
 def swapattr(obj, name, value):

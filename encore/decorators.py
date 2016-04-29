@@ -11,6 +11,20 @@ def itemproperties(keys):
     return [itemproperty(key) for key in keys]
 
 
+def pack_args(func):
+    @ft.wraps(func)
+    def _pack_args(*args):
+        return func(args)
+    return _pack_args
+
+
+def unpack_args(func):
+    @ft.wraps(func)
+    def _unpack_args(args):
+        return func(*coercions.coerce_tuple(args))
+    return _unpack_args
+
+
 def attrcached(attr):
     def decorator(func):
         @ft.wraps(func)
