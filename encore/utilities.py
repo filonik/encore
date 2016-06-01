@@ -22,6 +22,12 @@ def compose(*funcs):
     return ft.reduce(_compose, funcs)
 
 
+def product_range(lower, upper):
+    n = min(len(lower), len(upper))
+    for index in it.product(*[range(lower[i], upper[i]) for i in range(n)]):
+        yield index
+
+
 def unique_instance(name, truth=True):
     cls = type(name, (object,), {'__bool__': lambda self: truth, '__repr__': lambda self: name, '__str__': lambda self: name})
     return cls()

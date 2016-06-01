@@ -25,3 +25,11 @@ def open_resource(package, resource):
     stream = pkg_resources.resource_stream(package, resource)
     with cl.closing(stream) as file:
         yield file
+
+
+def makedirs(path):
+    try:
+        os.makedirs(path)
+    except OSError:
+        if not os.path.isdir(path):
+            raise
